@@ -40,8 +40,8 @@ router.post('/', async (req, res) => {
 
     // Save conversation to session history
     session.messages.push(
-      { role: 'user',      content: message.trim(), timestamp: new Date().toISOString() },
-      { role: 'assistant', content: aiResponse,      timestamp: new Date().toISOString() }
+      { role: 'user',      content: message.trim() },
+      { role: 'assistant', content: aiResponse }
     );
 
     const response = {
