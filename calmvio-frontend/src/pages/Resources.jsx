@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar.jsx';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL + '/api';
 
 const CATEGORY_META = {
   anxiety:     { icon: '😮‍💨', label: 'Anxiety'     },
