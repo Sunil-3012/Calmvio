@@ -1,14 +1,16 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
+import MoodEntry from '../models/MoodEntry.js';
 
 const router = Router();
 
 // ── Mood label + emoji map ───────────────────────────────────────────────────
 const MOOD_LABELS = {
-  1: { label: 'Very Low',  emoji: '😞' },
-  2: { label: 'Low',       emoji: '😔' },
-  3: { label: 'Okay',      emoji: '😐' },
-  4: { label: 'Good',      emoji: '🙂' },
-  5: { label: 'Great',     emoji: '😁' },
+  1: { label: 'Very Low', emoji: '😞' },
+  2: { label: 'Low',      emoji: '😔' },
+  3: { label: 'Okay',     emoji: '😐' },
+  4: { label: 'Good',     emoji: '🙂' },
+  5: { label: 'Great',    emoji: '😁' },
 };
 
 const VALID_TAGS = [
@@ -16,71 +18,82 @@ const VALID_TAGS = [
   'calm', 'happy', 'grateful', 'hopeful', 'overwhelmed',
 ];
 
-// In-memory mood store: Map<sessionId, Array<moodEntry>>
-const moodStore = new Map();
+// Fallback in-memory store
+const memMoods = new Map();
+const isMongoConnected = () => mongoose.connection.readyState === 1;
 
-// ── POST /api/mood — log a mood entry ───────────────────────────────────────
-router.post('/', (req, res) => {
+// ── POST /api/mood ────────────────────────────────────────────────────────────
+router.post('/', async (req, res) => {
   const { sessionId, score, note, tags } = req.body;
 
-  if (!sessionId) {
-    return res.status(400).json({ error: 'sessionId is required.' });
-  }
+  if (!sessionId) return res.status(400).json({ error: 'sessionId is required.' });
   if (!score || typeof score !== 'number' || score < 1 || score > 5) {
     return res.status(400).json({ error: 'score must be a number between 1 and 5.' });
   }
 
-  const sanitizedTags = Array.isArray(tags)
-    ? tags.filter((t) => VALID_TAGS.includes(t))
-    : [];
-
-  const entry = {
+  const sanitizedTags = Array.isArray(tags) ? tags.filter((t) => VALID_TAGS.includes(t)) : [];
+  const moodData = {
     sessionId,
     score,
     label: MOOD_LABELS[score].label,
     emoji: MOOD_LABELS[score].emoji,
-    note: note ? String(note).slice(0, 500) : '',
-    tags: sanitizedTags,
-    createdAt: new Date().toISOString(),
+    note:  note ? String(note).slice(0, 500) : '',
+    tags:  sanitizedTags,
   };
 
-  if (!moodStore.has(sessionId)) {
-    moodStore.set(sessionId, []);
+  if (isMongoConnected()) {
+    const entry = await MoodEntry.create(moodData);
+    return res.status(201).json({ success: true, mood: entry });
   }
-  moodStore.get(sessionId).push(entry);
 
+  // Fallback: in-memory
+  const entry = { ...moodData, createdAt: new Date().toISOString() };
+  if (!memMoods.has(sessionId)) memMoods.set(sessionId, []);
+  memMoods.get(sessionId).push(entry);
   return res.status(201).json({ success: true, mood: entry });
 });
 
-// ── GET /api/mood/:sessionId — mood history ──────────────────────────────────
-router.get('/:sessionId', (req, res) => {
+// ── GET /api/mood/:sessionId ──────────────────────────────────────────────────
+router.get('/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   const limit = parseInt(req.query.limit) || 30;
 
-  const history = moodStore.get(sessionId) || [];
-  const recent = history.slice(-limit);
+  if (isMongoConnected()) {
+    const moods = await MoodEntry.find({ sessionId })
+      .sort({ createdAt: -1 })
+      .limit(limit);
+    const total = await MoodEntry.countDocuments({ sessionId });
+    return res.json({ sessionId, moods: moods.reverse(), total });
+  }
 
-  return res.json({ sessionId, moods: recent, total: history.length });
+  const history = memMoods.get(sessionId) || [];
+  return res.json({ sessionId, moods: history.slice(-limit), total: history.length });
 });
 
-// ── GET /api/mood/:sessionId/summary ────────────────────────────────────────
-router.get('/:sessionId/summary', (req, res) => {
+// ── GET /api/mood/:sessionId/summary ─────────────────────────────────────────
+router.get('/:sessionId/summary', async (req, res) => {
   const { sessionId } = req.params;
-  const history = moodStore.get(sessionId) || [];
+
+  let history = [];
+
+  if (isMongoConnected()) {
+    history = await MoodEntry.find({ sessionId }).sort({ createdAt: 1 });
+  } else {
+    history = memMoods.get(sessionId) || [];
+  }
 
   if (history.length === 0) {
     return res.json({ summary: null, message: 'No mood entries found for this session.' });
   }
 
-  const scores = history.map((e) => e.score);
-  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const scores  = history.map((e) => e.score);
+  const avg     = scores.reduce((a, b) => a + b, 0) / scores.length;
 
-  // Simple trend: compare last 3 vs previous 3
   let trend = 'stable';
   if (scores.length >= 6) {
-    const recent = scores.slice(-3).reduce((a, b) => a + b, 0) / 3;
+    const recent   = scores.slice(-3).reduce((a, b) => a + b, 0) / 3;
     const previous = scores.slice(-6, -3).reduce((a, b) => a + b, 0) / 3;
-    if (recent > previous + 0.4) trend = 'improving';
+    if (recent > previous + 0.4)      trend = 'improving';
     else if (recent < previous - 0.4) trend = 'declining';
   }
 
@@ -88,7 +101,7 @@ router.get('/:sessionId/summary', (req, res) => {
     summary: {
       averageScore: Math.round(avg * 10) / 10,
       totalEntries: history.length,
-      recentMood: history[history.length - 1],
+      recentMood:   history[history.length - 1],
       trend,
     },
   });
