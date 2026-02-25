@@ -2,7 +2,7 @@
 
 > A full-stack mental health web app powered by Claude AI. Chat with Sage, track your mood, and access evidence-based wellness resources — anytime, for free.
 
-🌐 **Live Demo:** [calmvio-sunil.vercel.app](https://calmvio-sunil.vercel.app)
+🌐 **Live Demo:** [calmvio-sunil.vercel.app](https://https://calmivo.vercel.app/)
 
 ---
 
