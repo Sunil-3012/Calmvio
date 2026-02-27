@@ -32,7 +32,7 @@ export default function Chat() {
   useEffect(() => {
     setMessages([{
       role: 'assistant',
-      content: "👋 [STAGING] Hi, I'm Sage 💜 I'm here to listen, support, and help you feel a little calmer. What's on your mind today?",
+      content: "Hi, I'm Sage 💜 I'm here to listen, support, and help you feel a little calmer. What's on your mind today?",
       timestamp: new Date().toISOString(),
     }]);
     inputRef.current?.focus();
