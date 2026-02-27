@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar.jsx';
 
-const API_BASE = 'https://calmvio-production.up.railway.app/api';
+const API_BASE = (import.meta.env.VITE_API_URL
+  ? `https://${import.meta.env.VITE_API_URL}`
+  : 'https://calmvio-production.up.railway.app') + '/api';
 
 function getOrCreateSessionId() {
   let id = localStorage.getItem('calmivo_session');

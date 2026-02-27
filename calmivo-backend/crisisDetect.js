@@ -27,7 +27,11 @@ const CRISIS_RESOURCES = {
 
 export function detectCrisis(text = '') {
   const lower = text.toLowerCase();
-  return CRISIS_KEYWORDS.some((keyword) => lower.includes(keyword));
+  const detected = CRISIS_KEYWORDS.some((keyword) => lower.includes(keyword));
+  return {
+    detected,
+    response: detected ? CRISIS_RESOURCES : null,
+  };
 }
 
 export function crisisDetectMiddleware(req, res, next) {
