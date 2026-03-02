@@ -106,8 +106,15 @@ router.get('/:sessionId/history', async (req, res) => {
 });
 
 // ── DELETE /api/chat/:sessionId ───────────────────────────────────────────────
+// Same ownership check as GET history — must prove you own the session
+// by sending the sessionId as x-session-token header.
 router.delete('/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
+  const token = req.headers['x-session-token'];
+
+  if (!token || token !== sessionId) {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
 
   if (isMongoConnected()) {
     const result = await Session.findOneAndDelete({ sessionId });

@@ -25,6 +25,9 @@ export const chatRateLimit = rateLimit({
   message: {
     error: 'You\'re sending messages too quickly. Please wait a few minutes before trying again.',
   },
+  // Only count POST requests — GET/DELETE don't call the Anthropic API
+  // so they shouldn't eat into the rate limit budget
+  skip: (req) => req.method !== 'POST',
 });
 
 export default rateLimitMiddleware;
