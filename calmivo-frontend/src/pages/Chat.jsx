@@ -180,7 +180,7 @@ export default function Chat() {
                   <div className="crisis-banner__resources">
                     {crisis.resources.map((r, i) => (
                       <span key={i} className="crisis-resource">
-                        {r.name} — <strong>{r.contact}</strong>
+                        {r.name}: <strong>{r.contact}</strong>
                       </span>
                     ))}
                   </div>

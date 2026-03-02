@@ -126,7 +126,7 @@ export default function Mood() {
                 {/* Note */}
                 <textarea
                   className="mood-note"
-                  placeholder="Add a note (optional) — what's on your mind?"
+                  placeholder="Add a note (optional). What's on your mind?"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={3}
@@ -142,7 +142,7 @@ export default function Mood() {
                 </button>
 
                 {success && (
-                  <div className="mood-success">✅ Mood logged — keep checking in!</div>
+                  <div className="mood-success">✅ Mood logged! Keep checking in.</div>
                 )}
               </form>
             </div>
@@ -172,7 +172,7 @@ export default function Mood() {
               <div className="mood-history-card">
                 <h3 className="card-title">Recent check-ins</h3>
                 {history.length === 0 ? (
-                  <p className="mood-empty">No entries yet — log your first mood above!</p>
+                  <p className="mood-empty">No entries yet. Log your first mood above!</p>
                 ) : (
                   <div className="mood-history">
                     {[...history].reverse().slice(0, 10).map((entry, i) => (
