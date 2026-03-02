@@ -39,6 +39,16 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Message is required and must be a non-empty string.' });
   }
 
+  // If a sessionId is provided, verify ownership via x-session-token header.
+  // New sessions (no sessionId) are allowed through freely — they get a new UUID.
+  // When proper auth is added, this becomes a JWT check instead.
+  if (sessionId) {
+    const token = req.headers['x-session-token'];
+    if (!token || token !== sessionId) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+  }
+
   const { id, session } = await getOrCreateSession(sessionId);
 
   // Crisis detection runs BEFORE the AI responds
@@ -76,8 +86,17 @@ router.post('/', async (req, res) => {
 });
 
 // ── GET /api/chat/:sessionId/history ─────────────────────────────────────────
+// The sessionId itself acts as the ownership token for now.
+// The frontend sends it in x-session-token header to prove ownership.
+// When proper auth is added later, this becomes a JWT check instead.
 router.get('/:sessionId/history', async (req, res) => {
   const { sessionId } = req.params;
+  const token = req.headers['x-session-token'];
+
+  // Reject if no token provided or token doesn't match the sessionId
+  if (!token || token !== sessionId) {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
 
   if (isMongoConnected()) {
     const session = await Session.findOne({ sessionId });
@@ -97,8 +116,15 @@ router.get('/:sessionId/history', async (req, res) => {
 });
 
 // ── DELETE /api/chat/:sessionId ───────────────────────────────────────────────
+// Same ownership check as GET history — must prove you own the session
+// by sending the sessionId as x-session-token header.
 router.delete('/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
+  const token = req.headers['x-session-token'];
+
+  if (!token || token !== sessionId) {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
 
   if (isMongoConnected()) {
     const result = await Session.findOneAndDelete({ sessionId });

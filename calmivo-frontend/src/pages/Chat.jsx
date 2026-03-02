@@ -52,7 +52,10 @@ export default function Chat() {
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type':    'application/json',
+          'x-session-token': sessionId.current,
+        },
         body: JSON.stringify({ message: text, sessionId: sessionId.current }),
       });
 
