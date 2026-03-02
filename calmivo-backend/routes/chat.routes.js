@@ -76,8 +76,17 @@ router.post('/', async (req, res) => {
 });
 
 // ── GET /api/chat/:sessionId/history ─────────────────────────────────────────
+// The sessionId itself acts as the ownership token for now.
+// The frontend sends it in x-session-token header to prove ownership.
+// When proper auth is added later, this becomes a JWT check instead.
 router.get('/:sessionId/history', async (req, res) => {
   const { sessionId } = req.params;
+  const token = req.headers['x-session-token'];
+
+  // Reject if no token provided or token doesn't match the sessionId
+  if (!token || token !== sessionId) {
+    return res.status(403).json({ error: 'Access denied.' });
+  }
 
   if (isMongoConnected()) {
     const session = await Session.findOne({ sessionId });

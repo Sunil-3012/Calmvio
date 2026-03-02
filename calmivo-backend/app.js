@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import corsMiddleware from './middleware/cors.js';
-import rateLimitMiddleware from './middleware/rateLimit.js';
+import rateLimitMiddleware, { chatRateLimit } from './middleware/rateLimit.js';
 import chatRoutes from './routes/chat.routes.js';
 import moodRoutes from './routes/mood.routes.js';
 import resourcesRoutes from './routes/resources.routes.js';
@@ -18,7 +18,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(rateLimitMiddleware);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/chat',      chatRoutes);
+app.use('/api/chat',      chatRateLimit, chatRoutes);
 app.use('/api/mood',      moodRoutes);
 app.use('/api/resources', resourcesRoutes);
 app.use('/api/admin',     adminRoutes);
