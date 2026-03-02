@@ -39,6 +39,16 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Message is required and must be a non-empty string.' });
   }
 
+  // If a sessionId is provided, verify ownership via x-session-token header.
+  // New sessions (no sessionId) are allowed through freely — they get a new UUID.
+  // When proper auth is added, this becomes a JWT check instead.
+  if (sessionId) {
+    const token = req.headers['x-session-token'];
+    if (!token || token !== sessionId) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+  }
+
   const { id, session } = await getOrCreateSession(sessionId);
 
   // Crisis detection runs BEFORE the AI responds
