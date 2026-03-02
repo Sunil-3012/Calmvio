@@ -18,7 +18,7 @@ const corsMiddleware = cors({
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-token', 'x-admin-key'],
   credentials: true,
 });
 
